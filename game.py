@@ -4,7 +4,7 @@
 + сделать растановку кубов
 + сделать движение мяча
 + сделать встречу мяча и куба
-- сделать проигрышь
++ сделать проигрышь
 - сделать более интересное откскакивание 
 - сделать разные блоки
 - сделать разрушение плока
@@ -54,6 +54,8 @@ class Game(arcade.Window):
         self.ball.change_x = -SPEAD_BALL
         self.ball.change_y = -SPEAD_BALL
 
+        self.status = True
+
 
     def layout_blocks_one(self):
         centr_x = STARTING_POINT_FIRST_BLOCK_X
@@ -68,10 +70,13 @@ class Game(arcade.Window):
 
     def on_draw(self):
         arcade.start_render()
-        arcade.draw_texture_rectangle( WiDTH/2, HEIGHT/2, WiDTH, HEIGHT, self.bg)
-        self.bat.draw()
-        self.ball.draw()
-        self.list_blocks.draw()
+        if self.status:
+            arcade.draw_texture_rectangle( WiDTH/2, HEIGHT/2, WiDTH, HEIGHT, self.bg)
+            self.bat.draw()
+            self.ball.draw()
+            self.list_blocks.draw()
+        else:
+            arcade.draw_text("GAME OVER", WiDTH/2.6, HEIGHT/2, arcade.color.RED, 24)
 
     def on_key_press(self, symbol: int, modifiers: int):        
         if symbol == arcade.key.LEFT:
@@ -88,18 +93,22 @@ class Game(arcade.Window):
          
 
     def update(self, delta_time: float):
-        self.bat.update()
-        self.ball.update()
-        
-        collision_list = arcade.check_for_collision_with_list(self.ball, self.list_blocks)
-        if len(collision_list)>0:
-            self.ball.change_y = -self.ball.change_y        
-            for i in collision_list:                
-                i.remove_from_sprite_lists()
+        if self.status:
+            self.bat.update()
+            self.ball.update()
+            
+            collision_list = arcade.check_for_collision_with_list(self.ball, self.list_blocks)
+            if len(collision_list)>0:
+                self.ball.change_y = -self.ball.change_y        
+                for i in collision_list:                
+                    i.remove_from_sprite_lists()
 
+            if self.ball.bottom <= 0:
+                self.status = False
 
-        if arcade.check_for_collision(self.ball,self.bat):
-            self.ball.change_y = -self.ball.change_y
+            if arcade.check_for_collision(self.ball,self.bat):
+                self.ball.bottom = self.ball.top
+                self.ball.change_y = -self.ball.change_y
 
 class Bat(arcade.Sprite):
     def update(self):
