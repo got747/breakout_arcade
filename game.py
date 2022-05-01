@@ -1,20 +1,20 @@
 '''
-+  создать загтовку
++ создать заготовку
 + сделать движение площадки 
-+ сделать растановку кубов
++ сделать расстановку кубов
 + сделать движение мяча
 + сделать встречу мяча и куба
-+ сделать проигрышь
-- сделать более интересное откскакивание 
-- сделать разные блоки
-- сделать разрушение плока
-
++ сделать проигрыш
++ сделать более интересное отскакивание 
++ сделать разные блоки
+- сделать разрушение блока
 
 между блоками 75 - в плотную
 между блоками 100 - приятный отступ
 '''
 
 import arcade
+from random import getrandbits, choice
 
 WiDTH = 800
 HEIGHT = 600
@@ -26,12 +26,12 @@ SPEAD_BAT = 5
 
 STARTING_POINT_X_BALL = HEIGHT / 2 
 STARTING_POINT_Y_BALL = 100
-SPEAD_BALL = 3
+SPEAD_BALL = 2
 
 STARTING_POINT_FIRST_BLOCK_X = WiDTH / 5.5
 STARTING_POINT_FIRST_BLOCK_Y = HEIGHT / 3
 
-
+LIST_PATH_IMAGE = ["images/block_blue.png","images/block_red.png","images/block_purple.png"]
 
 class Game(arcade.Window):
     def __init__(self, width, height, title):
@@ -45,15 +45,19 @@ class Game(arcade.Window):
         self.bat.center_x = STARTING_POINT_X_BAT
         self.bat.center_y = STARTING_POINT_Y_BAT
 
+        self.list_texturs_block = []
+        for path in LIST_PATH_IMAGE:
+            self.list_texturs_block.append(arcade.load_texture(path))
+
         self.list_blocks = arcade.SpriteList()
         self.layout_blocks_one()
 
-        self.ball = Ball("images/ball.png", scale=0.2)
+        self.ball = Ball("images/ball.png",scale=0.2)
+
         self.ball.center_x = STARTING_POINT_X_BALL
         self.ball.center_y = STARTING_POINT_Y_BALL
         self.ball.change_x = -SPEAD_BALL
         self.ball.change_y = -SPEAD_BALL
-
         self.status = True
 
 
@@ -62,7 +66,8 @@ class Game(arcade.Window):
         centr_y = STARTING_POINT_FIRST_BLOCK_Y
         for lin in range(9):
             for col in range(7):
-                block = Block("images/block_blue.png", center_x= centr_x, center_y=centr_y, scale=0.2)
+                block = Block(center_x= centr_x, center_y=centr_y, scale=0.2)
+                block.texture = choice(self.list_texturs_block)
                 self.list_blocks.append(block)
                 centr_x += 85
             centr_x = STARTING_POINT_FIRST_BLOCK_X
@@ -88,18 +93,24 @@ class Game(arcade.Window):
         
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol == arcade.key.LEFT or symbol == arcade.key.RIGHT:
-            self.bat.change_x = 0
-            
-         
+            self.bat.change_x = 0  
 
     def update(self, delta_time: float):
+         
         if self.status:
             self.bat.update()
             self.ball.update()
-            
+
+            rand = getrandbits(1)
+
             collision_list = arcade.check_for_collision_with_list(self.ball, self.list_blocks)
             if len(collision_list)>0:
-                self.ball.change_y = -self.ball.change_y        
+                
+                self.ball.change_y = -self.ball.change_y  
+                
+                if rand:
+                    self.ball.change_x = -self.ball.change_x    
+
                 for i in collision_list:                
                     i.remove_from_sprite_lists()
 
@@ -107,7 +118,6 @@ class Game(arcade.Window):
                 self.status = False
 
             if arcade.check_for_collision(self.ball,self.bat):
-                self.ball.bottom = self.ball.top
                 self.ball.change_y = -self.ball.change_y
 
 class Bat(arcade.Sprite):
@@ -117,7 +127,8 @@ class Bat(arcade.Sprite):
             self.change_x = 0
         
 class Block(arcade.Sprite):
-    pass
+    def set_texturs(self):
+        pass
 
 class Ball(arcade.Sprite):
     def update(self):
@@ -131,3 +142,5 @@ class Ball(arcade.Sprite):
 
 game = Game(WiDTH, HEIGHT, TITLE)
 arcade.run()
+
+
