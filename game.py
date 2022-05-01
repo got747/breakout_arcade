@@ -31,7 +31,10 @@ SPEAD_BALL = 2
 STARTING_POINT_FIRST_BLOCK_X = WiDTH / 5.5
 STARTING_POINT_FIRST_BLOCK_Y = HEIGHT / 3
 
-LIST_PATH_IMAGE = ["images/block_blue.png","images/block_red.png","images/block_purple.png"]
+TUPLE_PATH_IMAGE_BLOCKS = (
+    ("images/block_blue.png", "images/block_blue_destroyed.png"),
+    ("images/block_red.png", "images/block_red_destroyed.png"),
+    ("images/block_purple.png", "images/block_purple_destroyed.png"))
 
 class Game(arcade.Window):
     def __init__(self, width, height, title):
@@ -44,10 +47,6 @@ class Game(arcade.Window):
         self.bat = Bat("images/bat.png", scale=0.2)
         self.bat.center_x = STARTING_POINT_X_BAT
         self.bat.center_y = STARTING_POINT_Y_BAT
-
-        self.list_texturs_block = []
-        for path in LIST_PATH_IMAGE:
-            self.list_texturs_block.append(arcade.load_texture(path))
 
         self.list_blocks = arcade.SpriteList()
         self.layout_blocks_one()
@@ -66,8 +65,8 @@ class Game(arcade.Window):
         centr_y = STARTING_POINT_FIRST_BLOCK_Y
         for lin in range(9):
             for col in range(7):
-                block = Block(center_x= centr_x, center_y=centr_y, scale=0.2)
-                block.texture = choice(self.list_texturs_block)
+                block = Block(tuple_texturs=choice(TUPLE_PATH_IMAGE_BLOCKS))
+                block.set_position(centr_x, centr_y)
                 self.list_blocks.append(block)
                 centr_x += 85
             centr_x = STARTING_POINT_FIRST_BLOCK_X
@@ -112,7 +111,7 @@ class Game(arcade.Window):
                     self.ball.change_x = -self.ball.change_x    
 
                 for i in collision_list:                
-                    i.remove_from_sprite_lists()
+                    i.hit()
 
             if self.ball.bottom <= 0:
                 self.status = False
@@ -127,8 +126,20 @@ class Bat(arcade.Sprite):
             self.change_x = 0
         
 class Block(arcade.Sprite):
-    def set_texturs(self):
-        pass
+    def __init__(self, tuple_texturs):
+        super().__init__(filename = tuple_texturs[0], scale=0.2)
+        self.hp = 2
+        if len(tuple_texturs)>1:            
+            self.append_texture(arcade.load_texture(tuple_texturs[1]))
+               
+    def hit(self):
+        self.hp -= 1       
+        if (len(self.textures)>1):
+            self.set_texture(1)
+
+        if self.hp == 0:
+            self.kill()
+           
 
 class Ball(arcade.Sprite):
     def update(self):
