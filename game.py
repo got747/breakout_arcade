@@ -1,51 +1,51 @@
+from traceback import print_tb
 import arcade
+import arcade.gui
+
 from random import getrandbits, choice
 
-WiDTH = 800
-HEIGHT = 600
-TITLE = "ARCADE"
+from Sprites.Ball import Ball
+from Sprites.Bat import Bat
+from Sprites.Block import Block
+from typing import Dict
+from config import *
 
-BLOCK_STEP_X_AXIS = 85
-BLOCK_STEP_Y_AXIS = 35
+from  db.controller_db import save_game, loud_game
 
-STARTING_POINT_X_BAT = HEIGHT / 2
-STARTING_POINT_Y_BAT = 50
-SPEAD_BAT = 5
-
-STARTING_POINT_X_BALL = HEIGHT / 2
-STARTING_POINT_Y_BALL = 100
-SPEAD_BALL = 2
-
-STARTING_POINT_FIRST_BLOCK_X = WiDTH / 5.5
-STARTING_POINT_FIRST_BLOCK_Y = HEIGHT / 3
-
-TUPLE_PATH_IMAGE_BLOCKS = (
-    ("images/block_blue.png", "images/block_blue_destroyed.png"),
-    ("images/block_red.png", "images/block_red_destroyed.png"),
-    ("images/block_purple.png", "images/block_purple_destroyed.png"))
-
-
-class Game(arcade.Window):
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title)
+class Game(arcade.View):
+    def __init__(self, game_data: Dict = {} ):
+        super().__init__()
         self.status = True
         self.ball = Ball("images/ball.png", scale=0.2)
         self.list_blocks = arcade.SpriteList()
         self.bat = Bat("images/bat.png", scale=0.2)
         self.bg = arcade.load_texture("images/bg_space.jpg")
-        self.setup()
+        
+        self.setup(game_data)
 
-    def setup(self):
+    def setup(self, game_data = {}):
+        if not game_data:
+            self.bat.center_x = STARTING_POINT_X_BAT
+            self.bat.center_y = STARTING_POINT_Y_BAT
 
-        self.bat.center_x = STARTING_POINT_X_BAT
-        self.bat.center_y = STARTING_POINT_Y_BAT
+            self.layout_blocks_one()
 
-        self.layout_blocks_one()
+            self.ball.center_x = STARTING_POINT_X_BALL
+            self.ball.center_y = STARTING_POINT_Y_BALL
+            self.ball.change_x = -SPEAD_BALL
+            self.ball.change_y = -SPEAD_BALL
+        else:
 
-        self.ball.center_x = STARTING_POINT_X_BALL
-        self.ball.center_y = STARTING_POINT_Y_BALL
-        self.ball.change_x = -SPEAD_BALL
-        self.ball.change_y = -SPEAD_BALL
+            self.bat.center_x = game_data['x']
+            self.bat.center_y = game_data['y']
+
+            self.layout_blocks_one()
+
+            self.ball.center_x = game_data['x_1']
+            self.ball.center_y = game_data['y_1']
+            self.ball.change_x = -game_data['change_x_1']
+            self.ball.change_y = -game_data['change_y']
+    
 
     def layout_blocks_one(self):
         centr_x = STARTING_POINT_FIRST_BLOCK_X
@@ -76,6 +76,25 @@ class Game(arcade.Window):
         if symbol == arcade.key.RIGHT:
             self.bat.change_x = SPEAD_BAT
 
+        if symbol == arcade.key.ESCAPE:
+            { 'bats_info': {'x': 12, 'y': 12, 'change_x': 12}}
+            game_data = {
+
+                'balls_info': {
+                    'x': self.ball.center_x
+                    , 'y': self.ball.center_y
+                    , 'change_x': self.ball.change_x
+                    , 'change_y': self.ball.change_y},
+
+                'bats_info': {
+                    'x': self.bat.center_x
+                    , 'y': self.bat.center_y
+                    , 'change_x': self.bat.change_x}
+            }
+            save_game("quick_save", game_data)
+            view = StopView()
+            self.window.show_view(view)
+
     def on_key_release(self, symbol: int, modifiers: int):
         if symbol == arcade.key.LEFT or symbol == arcade.key.RIGHT:
             self.bat.change_x = 0
@@ -104,40 +123,93 @@ class Game(arcade.Window):
 
             if arcade.check_for_collision(self.ball, self.bat):
                 self.ball.change_y = -self.ball.change_y
+                self.ball.bottom = self.bat.top
 
+class StopView(arcade.View):
+    def __init__(self):
+        super().__init__()
 
-class Bat(arcade.Sprite):
-    def update(self):
-        self.center_x += self.change_x
-        if self.right >= WiDTH or self.left <= 0:
-            self.change_x = 0
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
 
+        self.v_box = arcade.gui.UIBoxLayout()
 
-class Block(arcade.Sprite):
-    def __init__(self, tuple_texturs):
-        super().__init__(filename=tuple_texturs[0], scale=0.2)
-        self.hp = 2
-        if len(tuple_texturs) > 1:
-            self.append_texture(arcade.load_texture(tuple_texturs[1]))
+        ui_text_label = arcade.gui.UITextArea(text="Click escape to finish or enter the name of the save and click return to exit.\
+                                                    Clicking on return without name save will end the game without saving",
+                                              width=450,
+                                              height=60)
 
-    def hit(self):
-        self.hp -= 1
-        if len(self.textures) > 1:
-            self.set_texture(1)
+        self.v_box.add(ui_text_label.with_space_around(bottom=0))
 
-        if self.hp == 0:
-            self.kill()
+        self.ui_text_input = arcade.gui.UIInputText(width=450, height=40) 
+       
+        self.v_box.add(self.ui_text_input.with_space_around(1).with_border(color=arcade.color.WHITE))
 
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box)
+        )
 
-class Ball(arcade.Sprite):
-    def update(self):
-        self.center_x += self.change_x
-        self.center_y += self.change_y
-        if self.right >= WiDTH or self.left <= 0:
-            self.change_x = -self.change_x
-        if self.top >= HEIGHT or self.bottom <= 0:
-            self.change_y = -self.change_y
+    def on_show_view(self):
+        arcade.set_background_color(arcade.csscolor.BLACK)
+    
+    def on_draw(self):
+        self.clear()
+        self.manager.draw()
+  
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.RETURN: 
+            if self.ui_text_input.text.strip() != "":
+                pass
+            else:
+                exit()
+            
+        if symbol == arcade.key.ESCAPE: 
+            game = Game(loud_game("quick_save"))
+            self.window.show_view(game)
 
+class StartView(arcade.View):
+    def __init__(self):
+        super().__init__()
 
-game = Game(WiDTH, HEIGHT, TITLE)
+        self.manager = arcade.gui.UIManager()
+        self.manager.enable()
+
+        self.v_box = arcade.gui.UIBoxLayout()
+
+        ui_text_label = arcade.gui.UITextArea(text="Enter the name of the save or click return",
+                                              width=450,
+                                              height=60)
+
+        self.v_box.add(ui_text_label.with_space_around(bottom=0))
+
+        self.ui_text_input = arcade.gui.UIInputText(width=450, height=40) 
+       
+        self.v_box.add(self.ui_text_input.with_space_around(1).with_border())
+
+        self.manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box)
+        )
+
+    def on_show_view(self):
+        arcade.set_background_color(arcade.csscolor.DARK_SLATE_BLUE)
+    
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        self.manager.draw()
+  
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == arcade.key.RETURN: 
+            game = Game(loud_game(self.ui_text_input.text.strip()))
+            self.window.show_view(game)
+
+window = arcade.Window(WiDTH, HEIGHT, TITLE)
+menu = StartView()
+window.show_view(menu)
 arcade.run()

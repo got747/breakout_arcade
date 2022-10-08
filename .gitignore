@@ -1,4 +1,6 @@
-/.my
-/images
+.my/
+images/
+__pycache__/
 
 test.py
+game_save.db
