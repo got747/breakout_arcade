@@ -22,5 +22,5 @@ DB_NAME = "game_save.db"
 TUPLE_PATH_IMAGE_BLOCKS = (
     ("images/block_blue.png", "images/block_blue_destroyed.png"),
     ("images/block_red.png", "images/block_red_destroyed.png"),
-    ("images/block_purple.png", "images/block_purple_destroyed.png"))
-
+    ("images/block_purple.png", "images/block_purple_destroyed.png"),
+)

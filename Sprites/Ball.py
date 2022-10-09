@@ -1,5 +1,3 @@
-
-
 from arcade import Sprite
 
 from config import WiDTH, HEIGHT

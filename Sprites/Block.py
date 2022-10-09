@@ -1,6 +1,7 @@
 from arcade import Sprite, load_texture
 
-class Block( Sprite):
+
+class Block(Sprite):
     def __init__(self, tuple_texturs):
         super().__init__(filename=tuple_texturs[0], scale=0.2)
         self.hp = 2
@@ -14,5 +15,3 @@ class Block( Sprite):
 
         if self.hp == 0:
             self.kill()
-
-
